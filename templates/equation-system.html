@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Система нелинейных уравнений</title>
+    <link rel="stylesheet" type="text/css" href="/static/css/main.css">
+</head>
+<body>
+<button class="btn" onclick="location.href='/one-equation'">Нелинейное уравнение</button>
+<h1>Решение системы нелинейных уравнений</h1>
+    <form method="post" action="{{ url_for('equation_system') }}">
+        {{ form.hidden_tag() }}
+        <div class="form-block">
+            {{ form.equation.label }}
+            {{ form.equation }}
+        </div>
+        <div class="form-block">
+            {{ form.x0.label }}
+            {{ form.x0 }}
+        </div>
+        <div class="form-block">
+            {{ form.y0.label }}
+            {{ form.y0 }}
+        </div>
+        <div class="form-block">
+            {{ form.eps.label }}
+            {{ form.eps }}
+        </div>
+        <div class="form-block">
+            {{ form.submit }}
+        </div>
+    </form>
+    <div class="result">
+        {% if result %}
+            <p>Решение: {{ result }}</p>
+        {% endif %}
+    </div>
+<div id="calculator" style="width: 600px; height: 400px;"></div>
+</div>
+<script src="https://www.desmos.com/api/v1.10/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
+<script>
+  var elt = document.getElementById('calculator');
+  var calculator = Desmos.GraphingCalculator(elt);
+  calculator.updateSettings({
+    keypad: false,
+    expressions: false,
+    expressionsCollapsed: true
+  });
+
+  function updateGraph(id, equation) {
+    calculator.setExpression({ id: id, latex: equation });
+  }
+
+  document.querySelectorAll('input[name="equation"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      var equation = this.value;
+      if (equation === 'x^2 + y^2 = 4 && y = 3x^2') {
+        updateGraph('graph1', 'x^2 + y^2 = 4');
+        updateGraph('graph2', 'y = 3x^2');
+      } else if (equation === 'y = sin(x) && y = cos(x)') {
+        updateGraph('graph1', 'y = \\sin(x)');
+        updateGraph('graph2', 'y = \\cos(x)');
+      }
+    });
+  });
+
+  document.querySelector('input[name="x0"]').addEventListener('input', function(event) {
+    replaceCommaWithDot(event);
+  });
+
+  document.querySelector('input[name="y0"]').addEventListener('input', function(event) {
+    replaceCommaWithDot(event);
+  });
+
+  window.onload = function() {
+      var selectedEquation = document.querySelector('input[name="equation"]:checked');
+      if (selectedEquation) {
+          selectedEquation.dispatchEvent(new Event('change'));
+      }
+  }
+  function replaceCommaWithDot(event) {
+    event.target.value = event.target.value.replace(/,/g, '.');
+  }
+  document.querySelector('input[name="eps"]').addEventListener('input', function(event) {
+    replaceCommaWithDot(event);
+  });
+</script>
+</body>
+</html>

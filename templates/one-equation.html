@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Нелинейное уравнение</title>
+    <link rel="stylesheet" type="text/css" href="/static/css/main.css">
+</head>
+<body>
+<div class="container">
+<button class="btn" onclick="location.href='/equation-system'">Система нелинейных уравнений</button>
+    <h1>Решение нелинейного уравнения</h1>
+    <form method="post" action="{{ url_for('one_equation') }}">
+        {{ form.hidden_tag() }}
+        <div class="form-block">
+            {{ form.equation.label }}
+            {{ form.equation }}
+        </div>
+        <div class="form-block">
+            {{ form.method.label }}
+            {{ form.method }}
+        </div>
+        <div class="form-block">
+            {{ form.a.label }}
+            {{ form.a }}
+        </div>
+        <div class="form-block">
+            {{ form.b.label }}
+            {{ form.b }}
+        </div>
+        <div class="form-block">
+            {{ form.eps.label }}
+            {{ form.eps }}
+        </div>
+        <div class="form-block">
+            {{ form.submit }}
+        </div>
+    </form>
+    <div class="result">
+        {% if result %}
+            <p>Решение: {{ result }}</p>
+        {% endif %}
+    </div>
+<div id="calculator" style="width: 600px; height: 400px;"></div>
+</div>
+<script src="https://www.desmos.com/api/v1.10/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
+<script>
+  var elt = document.getElementById('calculator');
+  var calculator = Desmos.GraphingCalculator(elt);
+  calculator.updateSettings({
+    keypad: false,
+    expressions: false,
+    expressionsCollapsed: true
+  });
+
+  function updateGraph(equation) {
+    calculator.setExpression({ id: 'graph1', latex: equation });
+  }
+
+  function updateVerticalLine(id, x) {
+    calculator.setExpression({ id: id, latex: `x=${x}` });
+  }
+
+  document.querySelectorAll('input[name="equation"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      var equation = this.value;
+      if (equation === 'x^3 - x + 4') {
+        updateGraph('y = x^3 - x + 4');
+      } else if (equation === 'x^2 - 4') {
+        updateGraph('y = x^2 - 4');
+      } else if (equation === 'sin(x) - 0.5') {
+        updateGraph('y = \\sin(x) - 0.5');
+      }
+    });
+  });
+
+  document.querySelector('input[name="a"]').addEventListener('input', function(event) {
+    replaceCommaWithDot(event);
+    var a = event.target.value;
+    updateVerticalLine('line_a', a);
+  });
+
+  document.querySelector('input[name="b"]').addEventListener('input', function(event) {
+    replaceCommaWithDot(event);
+    var b = event.target.value;
+    updateVerticalLine('line_b', b);
+  });
+
+  window.onload = function() {
+      var selectedEquation = document.querySelector('input[name="equation"]:checked');
+      if (selectedEquation) {
+          selectedEquation.dispatchEvent(new Event('change'));
+      }
+      var aField = document.querySelector('input[name="a"]');
+    if (aField.value) {
+      aField.dispatchEvent(new Event('input'));
+    }
+    var bField = document.querySelector('input[name="b"]');
+    if (bField.value) {
+      bField.dispatchEvent(new Event('input'));
+    }
+  }
+  function replaceCommaWithDot(event) {
+    event.target.value = event.target.value.replace(/,/g, '.');
+  }
+  document.querySelector('input[name="eps"]').addEventListener('input', function(event) {
+    replaceCommaWithDot(event);
+  });
+</script>
+</body>
+</html>
