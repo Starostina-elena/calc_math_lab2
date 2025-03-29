@@ -1,5 +1,6 @@
+import io
 from math import cos, sin
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, make_response, send_file
 from forms.one_equation_form import OneEquationForm
 from forms.equation_system_form import EquationSystemForm
 
@@ -10,6 +11,37 @@ from utils.math_methods.equation_system.newton import newton_system_method
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'ukDSvjgGDjy678i3hrb^&B*&Bgjhfn'
+
+
+@app.route('/download_report', methods=['POST'])
+def download_report():
+    equation = request.form['equation']
+    method = request.form['method']
+    a = request.form['a']
+    b = request.form['b']
+    eps = request.form['eps']
+    result = request.form['result']
+    report_content = f"Equation: {equation}\nMethod: {method}\nInterval: [{a}, {b}]\nEpsilon: {eps}\nResult: {result}\n"
+    report = io.StringIO(report_content)
+    return send_file(io.BytesIO(report.getvalue().encode('utf-8')),
+                     mimetype='text/plain',
+                     as_attachment=True,
+                     download_name='report.txt')
+
+
+@app.route('/download_report_system', methods=['POST'])
+def download_report_system():
+    equation = request.form['equation']
+    method = request.form['method']
+    eps = request.form['eps']
+    result = request.form['result']
+    report_content = f"Equation: {equation}\nMethod: {method}\nEpsilon: {eps}\nResult: {result}\n"
+    report = io.StringIO(report_content)
+    return send_file(io.BytesIO(report.getvalue().encode('utf-8')),
+                     mimetype='text/plain',
+                     as_attachment=True,
+                     download_name='report.txt')
+
 
 # методы хорд, Ньютона, простой итерации для одного уравнения
 # метод Ньютона для системы
@@ -39,19 +71,23 @@ def one_equation():
             f_ = lambda x: cos(x)
             f__ = lambda x: -sin(x)
         try:
-            if f(a) * f(b) > 0 or f__(a) * f__(b) < 0:
-            # if f_(a) * f_(b) > 0:
-                 raise ValueError('Некорректный отрезок')
+            if f(a) * f(b) > 0:
+                 raise ValueError('Некорректный отрезок: корня нет или корней больше одного')
+            if f_(a) * f_(b) < 0:
+                 raise ValueError('Некорректный отрезок: больше одного корня (производная не сохраняет знак)')
             if method == 'chord_method':
                 result = chord_method(a, b, f, eps)
             elif method == 'newton_method':
                 result = newton_method(a, b, f, f_, f__, eps)
             else:
                 result = simple_iteration_method(a, b, f, f_, f__, eps)
-        except ValueError as e:
-            return render_template('one-equation.html', form=form, result=e)
-        return render_template('one-equation.html', form=form, result=result)
-    return render_template('one-equation.html', form=form)
+            y = f(result)
+        except (ValueError, ZeroDivisionError) as e:
+            return render_template('one-equation.html', form=form, result=e, y=None)
+        return render_template('one-equation.html', form=form, result=result, y=y)
+    if request.method == 'POST':
+        return render_template('one-equation.html', form=form, y=None, result='Введите корректные данные')
+    return render_template('one-equation.html', form=form, result=None, y=None)
 
 
 @app.route('/equation-system', methods=['GET', 'POST'])
@@ -79,9 +115,11 @@ def equation_system():
         try:
             x1, y1, cnt, delta_x, delta_y = newton_system_method(f_x, f_y, g_x, g_y, f, g, x0, y0, eps)
         except ValueError as e:
-            return render_template('equation-system.html', form=form, result=e)
-        return render_template('equation-system.html', form=form, result=f"x = {x1}, y={y1}, ответ получен за {cnt} итераций. Погрешность x: {delta_x}, погрешность y: {delta_y}")
-    return render_template('equation-system.html', form=form)
+            return render_template('equation-system.html', form=form, x=e, y=None)
+        return render_template('equation-system.html', form=form, y=y1, x=x1, result=f"x = {x1}, y={y1}, ответ получен за {cnt} итераций. Погрешность x: {delta_x}, погрешность y: {delta_y}")
+    if request.method == 'POST':
+        return render_template('equation-system.html', form=form, y=None, x=None, result='Введите корректные данные')
+    return render_template('equation-system.html', form=form, y=None, x=None)
 
 
 if __name__ == '__main__':

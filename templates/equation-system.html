@@ -33,6 +33,17 @@
     <div class="result">
         {% if result %}
             <p>Решение: {{ result }}</p>
+            </div>
+            <div class="container">
+            <form method="post" action="{{ url_for('download_report_system') }}">
+                <input type="hidden" name="equation" value="{{ form.equation.data }}">
+                <input type="hidden" name="method" value="Newton">
+                <input type="hidden" name="eps" value="{{ form.eps.data }}">
+                <input type="hidden" name="result" value="{{ result }}">
+            <div class="form-block">
+            <button type="submit">Скачать отчет</button></div>
+            </form>
+            </div>
         {% endif %}
     </div>
 <div id="calculator" style="width: 600px; height: 400px;"></div>
@@ -77,6 +88,19 @@
       if (selectedEquation) {
           selectedEquation.dispatchEvent(new Event('change'));
       }
+      {% if x is not none and y is not none %}
+            var x = {{ x|tojson }};
+            var y = {{ y|tojson }};
+            if (x) {
+                calculator.setExpression({id: 'point', latex: `(${x}, ${y})`});
+                calculator.setMathBounds({
+                    left: x - 7,
+                    right: x + 7,
+                    bottom: y - 5,
+                    top: y + 5
+                });
+            }
+        {% endif %}
   }
   function replaceCommaWithDot(event) {
     event.target.value = event.target.value.replace(/,/g, '.');
